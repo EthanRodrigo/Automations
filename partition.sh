@@ -4,7 +4,7 @@
 partition(){
 device=""
 if [ "$#" -ne 1]; then  # if no arguments were provided
-	device=$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | head -n1 | awk '{print $1}')
+	device=$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | head -n1 | awk '{print $1}') # then use the largest drive
 fi
 
 fdisk /dev/$device <<EOF
