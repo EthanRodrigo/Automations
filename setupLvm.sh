@@ -23,6 +23,22 @@ getArg(){
 		shift
 	done
 }
+partition(){
+fdisk $1 <<EOF
+d
+n
+p
+
+
+
+t
+8e
+p
+EOF
+}
+LvmSetup(){
+	pvcreate --dataalignment 1m $devices
+}
 
 getArg
 
@@ -34,12 +50,9 @@ do
 	echo $dev
 done
 
-partitions=""
 for dev in $devices
 do
-	device=$(cut -d '/' -f 3 <<< "$dev")
-	part=$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}'))
-	partitions+="/dev/$part"
+	partition $dev
 done
 
-echo $partitions
+echo pvdisplay
