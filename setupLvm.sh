@@ -117,3 +117,4 @@ main(){
 	laterSetup
 	checkForErrors
 }
+main()
