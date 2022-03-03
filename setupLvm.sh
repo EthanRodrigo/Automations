@@ -19,7 +19,7 @@ or : setuplvm [OPTIONS]
 -v virtual-group-name, --vgroup-name virtual-group-name
 		Change the label of the virtual group. Default is \`vgroup0\`.
 -d drive/s, --devices drive/s
-		Change the default drive. Default is \`/dev/sda\`. You can add a list of array inside \"\", like \`-d \"/dev/sda /dev/sdb\"\`.
+		Change the default drive. Default is the largest device. You can add a list of array inside \"\", like \`-d \"/dev/sda /dev/sdb\"\`.
 -h help, --help
 		Prints this
 	"
