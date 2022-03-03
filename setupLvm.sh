@@ -99,7 +99,7 @@ checkForErrors(){
 	elif [[ $(lvs | awk '{print $1}') != *"home"* ]]; then
 		echo "Logical volume home haven't been created"
 	# checks fot root and home in fstab
-	elif [ $(echo $(cat /etc/fstab | awk '{print $2}' | grep 'root\|home' | wc -l)) != 3 ]; then 
+	elif [ $(echo $(cat /mnt/etc/fstab | awk '{print $2}' | grep 'root\|home' | wc -l)) != 3 ]; then 
 		echo "Error in fstab"
 	else 
 		echo "Fret not! No errors"
