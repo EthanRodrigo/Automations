@@ -1,7 +1,8 @@
 #!/bin/bash
 
 devices="/dev/$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $1}')" # default is the largest drive
-let "rootSize = (($(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $2}') * 10) / 100) / 1073741824" # default root size is the 10% of the actual size
+let "percentage = (($(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $2}') * 10) / 100)" # 10 percent of the device
+rootSize=$(echo $(awk -v n="$asd" 'BEGIN{printf "%.1f", n/1073741824}'))
 vgroupName="volgroup0" # the default volume group name
 partitions=""
 
@@ -52,6 +53,8 @@ p
 t
 8e
 p
+
+w
 EOF
 
 # creating an array of partitions
