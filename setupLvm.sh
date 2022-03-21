@@ -2,7 +2,7 @@
 
 devices="/dev/$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $1}')" # default is the largest drive
 let "percentage = (($(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $2}') * 10) / 100)" # 10 percent of the device
-rootSize=$(echo $(awk -v n="$asd" 'BEGIN{printf "%.1f", n/1073741824}'))
+rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
 vgroupName="volgroup0" # the default volume group name
 partitions=""
 
@@ -17,6 +17,8 @@ or : setuplvm [OPTIONS]
 
 -r size-of-root, --root-size size-of-root
 		Change the size of the root logical volume. Default is 10% size of the device.
+		The size should be \`G\` for Gigabyte or \`M\` for Megabyte.
+		ex: -r 10G
 -v virtual-group-name, --vgroup-name virtual-group-name
 		Change the label of the virtual group. Default is \`vgroup0\`.
 -d drive/s, --devices drive/s
