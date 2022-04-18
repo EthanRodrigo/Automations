@@ -1,13 +1,14 @@
 #!/bin/bash
 
-devices="/dev/$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $1}')" # default is the largest drive
-let "percentage = (($(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $2}') * 10) / 100)" # 10 percent of the device
+tmp=$(echo $(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1))
+devices="/dev/$(echo $tmp | awk '{print $1}')"
+let "percentage = (($(echo $tmp | awk '{print $2}') * 10) / 100)" # 10 percent of the storage
 rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
 vgroupName="volgroup0" # the default volume group name
 partitions=""
 filesystem="ext4"
 
-if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:d: --l help,root-size:,vgroup-name:,devices: -- "$@") # storing arguments in an array
+if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d: --l help,root-size:,vgroup-name:,filesystem:,devices: -- "$@") # storing arguments in an array
 then
 	exit 1
 fi
