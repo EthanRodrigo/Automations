@@ -1,12 +1,14 @@
 #!/bin/bash
 
-devices="/dev/$(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $1}')" # default is the largest drive
-let "percentage = (($(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1 | awk '{print $2}') * 10) / 100)" # 10 percent of the device
+tmp=$(echo $(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
+devices="/dev/$(echo $tmp | awk '{print $1}')"
+let "percentage = (($(echo $tmp | awk '{print $2}') * 10) / 100)" # 10 percent of the storage
 rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
 vgroupName="volgroup0" # the default volume group name
 partitions=""
+filesystem="ext4"
 
-if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:d: --l help,root-size:,vgroup-name:,devices: -- "$@") # storing arguments in an array
+if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d: --l help,root-size:,vgroup-name:,filesystem:,devices: -- "$@") # storing arguments in an array
 then
 	exit 1
 fi
@@ -23,6 +25,8 @@ or : setuplvm [OPTIONS]
 		Change the label of the virtual group. Default is \`vgroup0\`.
 -d drive/s, --devices drive/s
 		Change the default drive. Default is \`/dev/sda\`. You can add a list of array inside \"\", like \`-d \"/dev/sda /dev/sdb\"\`.
+-f file-system, --filesystem file-system
+		Change the file system. Default file system is ext4
 -h help, --help
 		Prints this
 	"
@@ -36,6 +40,7 @@ getArg(){
 			-r | --root-size) rootSize="$2"; shift;;
 			-v | --vgroup-name) vgroupName="$2"; shift;;
 			-d | --devices) devices=""; devices+="$2"; shift;;
+			-f | --filesystem) filesystem="$2"; shift;;
 			-h | --help) printHelp; exit;; 
 			-- ) shift; break;;
 			*) echo Unexpected arg;;
@@ -74,8 +79,15 @@ LvmSetup(){
 		pvcreate --dataalignment 1m $part
 	done
 	vgcreate $vgroupName $partitions
-	lvcreate -L $rootSize"G" $vgroupName -n root # the root named root, what else you need, huh?
-	lvcreate -l 100%FREE $vgroupName -n home # and home is home
+
+	# if there's only root
+	if [ $(echo $tmp | awk '{print $2}') -gt 10 ]; then
+		# if the drive is greater than 10Gigs use 10 for root
+		lvcreate -L $rootSize $vgroupName -n root # the root named root, what else you need, huh?
+		lvcreate -l 100%FREE $vgroupName -n home # and home is home
+	else # or else use the whole drive only for root
+		lvcreate -l 100%FREE $vgroupName -n root
+	fi
 
 	# activating volume groups
 	modprobe dm_mod
@@ -83,10 +95,10 @@ LvmSetup(){
 }
 laterSetup(){
 	# formatting and mounting
-	mkfs.ext4 "/dev/$vgroupName/root"
+	mkfs.$filesystem "/dev/$vgroupName/root"
 	mount "/dev/$vgroupName/root" /mnt
 
-	mkfs.ext4 "/dev/$vgroupName/home"
+	mkfs.$filesystem "/dev/$vgroupName/home"
 	mkdir /mnt/home
 	mount "/dev/$vgroupName/home" /mnt/home
 
