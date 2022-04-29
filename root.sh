@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tmp=$(echo $(lsblk -db | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
+tmp=$(echo $(lsblk -d | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
 devices="/dev/$(echo $tmp | awk '{print $1}')"
 let "percentage = (($(echo $tmp | awk '{print $2}') * 10) / 100)" # 10 percent of the storage
 rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
@@ -98,9 +98,12 @@ laterSetup(){
 	mkfs.$filesystem "/dev/$vgroupName/root"
 	mount "/dev/$vgroupName/root" /mnt
 
-	mkfs.$filesystem "/dev/$vgroupName/home"
-	mkdir /mnt/home
-	mount "/dev/$vgroupName/home" /mnt/home
+
+	if [[ $(lvs | awk '{print $1}') != *"home"* ]]; then
+		mkfs.$filesystem "/dev/$vgroupName/home"
+		mkdir /mnt/home
+		mount "/dev/$vgroupName/home" /mnt/home
+	fi
 
 	# settingup fstab
 	mkdir /mnt/etc
@@ -109,12 +112,13 @@ laterSetup(){
 checkForErrors(){
 	# checks out whether the vgroup has created or not
 	if [[ $(vgs | awk '{print $1}') != *$vgroupName*  ]]; then 
-		echo "Virtual group can't br created"
+		echo "Virtual group can't be created"
 	# checks for root and home logical volumes
 	elif [[ $(lvs | awk '{print $1}') != *"root"* ]]; then 
 		echo "Logical volume root haven't been created"
 	elif [[ $(lvs | awk '{print $1}') != *"home"* ]]; then
 		echo "Logical volume home haven't been created"
+		echo "Fret not! No errors"
 	# checks fot root and home in fstab
 	elif [ $(echo $(cat /mnt/etc/fstab | awk '{print $2}' | grep 'root\|home' | wc -l)) != 3 ]; then 
 		echo "Error in fstab"
