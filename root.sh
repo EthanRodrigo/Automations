@@ -99,7 +99,7 @@ laterSetup(){
 	mount "/dev/$vgroupName/root" /mnt
 
 
-	if [[ $(lvs | awk '{print $1}') != *"home"* ]]; then
+	if [[ $(lvs | awk '{print $1}') == *"home"* ]]; then
 		mkfs.$filesystem "/dev/$vgroupName/home"
 		mkdir /mnt/home
 		mount "/dev/$vgroupName/home" /mnt/home
