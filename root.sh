@@ -138,7 +138,4 @@ main(){
 	laterSetup
 	checkForErrors
 }
-#main
-getArg
-echo $rootSize
-echo $filesystem
+main
