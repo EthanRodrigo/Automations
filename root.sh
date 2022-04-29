@@ -2,7 +2,7 @@
 
 tmp=$(echo $(lsblk -d | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
 devices="/dev/$(echo $tmp | awk '{print $1}')"
-let "percentage = (($(echo $tmp | awk '{print $2}') * 10) / 100)" # 10 percent of the storage
+let "percentage = (($(echo $tmp | awk '{print $2}' | cut -d . -f1) * 10) / 100)" # 10 percent of the storage
 rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
 vgroupName="volgroup0" # the default volume group name
 partitions=""
@@ -138,4 +138,7 @@ main(){
 	laterSetup
 	checkForErrors
 }
-main
+#main
+getArg
+echo $rootSize
+echo $filesystem
