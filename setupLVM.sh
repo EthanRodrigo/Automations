@@ -2,13 +2,20 @@
 
 tmp=$(echo $(lsblk -d | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
 devices="/dev/$(echo $tmp | awk '{print $1}')"
-let "percentage = (($(echo $tmp | awk '{print $2}' | cut -d . -f1) * 10) / 100)" # 10 percent of the storage
-rootSize=$(echo $(awk -v n="$percentage" 'BEGIN{printf "%.1f", n/1073741824}'))"G"
+devSize=$(echo $tmp | awk '{print $2}')
+rootSize=$(echo $(bc -l <<< "scale=1; $devSize * 10 / 100"))"G"
 vgroupName="volgroup0" # the default volume group name
 partitions=""
 filesystem="ext4"
+home=''
 
-if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d: --l help,root-size:,vgroup-name:,filesystem:,devices: -- "$@") # storing arguments in an array
+if [ $(echo $tmp | awk '{print $2}') -gt 10 ]; then
+	home='Y'
+else
+	home='N'
+fi
+
+if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home: -- "$@") # storing arguments in an array
 then
 	exit 1
 fi
@@ -41,6 +48,10 @@ getArg(){
 			-v | --vgroup-name) vgroupName="$2"; shift;;
 			-d | --devices) devices=""; devices+="$2"; shift;;
 			-f | --filesystem) filesystem="$2"; shift;;
+			-u | --user-home) 
+				home="$2";
+				home=$(echo ${home^^});
+				shift;;
 			-h | --help) printHelp; exit;; 
 			-- ) shift; break;;
 			*) echo Unexpected arg;;
@@ -80,9 +91,8 @@ LvmSetup(){
 	done
 	vgcreate $vgroupName $partitions
 
-	# if there's only root
-	if [ $(echo $tmp | awk '{print $2}') -gt 10 ]; then
-		# if the drive is greater than 10Gigs use 10 for root
+	
+	if [[ $home =~ 'Y' ]];then # if there's home also
 		lvcreate -L $rootSize $vgroupName -n root # the root named root, what else you need, huh?
 		lvcreate -l 100%FREE $vgroupName -n home # and home is home
 	else # or else use the whole drive only for root
