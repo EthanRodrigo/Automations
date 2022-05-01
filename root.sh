@@ -15,7 +15,7 @@ else
 	home='N'
 fi
 
-if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home -- "$@") # storing arguments in an array
+if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home: -- "$@") # storing arguments in an array
 then
 	exit 1
 fi
