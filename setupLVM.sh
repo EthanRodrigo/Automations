@@ -46,7 +46,7 @@ getArg(){
 		case $1 in
 			-r | --root-size) rootSize="$2"; shift;;
 			-v | --vgroup-name) vgroupName="$2"; shift;;
-			-d | --devices) devices=""; devices+="$2"; shift;;
+			-d | --devices) unset devices; devices+="$2"; shift;;
 			-f | --filesystem) filesystem="$2"; shift;;
 			-u | --user-home) 
 				home="$2";
@@ -79,8 +79,7 @@ EOF
 for dev in $devices
 do
 	device=$(cut -d '/' -f 3 <<< "$dev")
-	part=$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}'))
-	partitions+="/dev/$part"
+	partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
 done
 }
 LvmSetup(){
