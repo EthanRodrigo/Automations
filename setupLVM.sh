@@ -74,13 +74,6 @@ p
 
 w
 EOF
-
-# creating an array of partitions
-for dev in $devices
-do
-	device=$(cut -d '/' -f 3 <<< "$dev")
-	partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
-done
 }
 LvmSetup(){
 	# the real lvm setup :xd
@@ -141,6 +134,13 @@ main(){
 	for dev in $devices
 	do
 		partition $dev
+	done
+
+	# creating an array of partitions
+	for dev in $devices
+	do
+		device=$(cut -d '/' -f 3 <<< "$dev")
+		partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
 	done
 
 	LvmSetup
