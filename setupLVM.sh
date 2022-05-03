@@ -32,6 +32,8 @@ or : setuplvm [OPTIONS]
 		Change the default drive. Default is \`/dev/sda\`. You can add a list of array inside \"\", like \`-d \"/dev/sda /dev/sdb\"\`.
 -f file-system, --filesystem file-system
 		Change the file system. Default file system is ext4
+-u user-home
+		Specify whether you need a home partition or not. Default is 'Y' when there's space more than 10Gigs
 -h help, --help
 		Prints this
 	"
