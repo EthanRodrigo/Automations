@@ -2,6 +2,7 @@
 
 tmp=$(echo $(lsblk -d | awk '/ 8:/' | awk '{print $1" "$4}' | sort -k 2 | tail -n1) | cut -d G -f1) # no harcoding :-)
 devices="/dev/$(echo $tmp | awk '{print $1}')"
+rootSize=0
 vgroupName="volgroup0" # the default volume group name
 partitions=""
 filesystem="ext4"
@@ -84,8 +85,9 @@ LvmSetup(){
 	vgcreate $vgroupName $partitions
 
 	vgSize=$(echo $(vgs | awk '{print $6}' | awk 'NR==2' | cut -d . -f1)) # virtual group size
+	rootSize=$(echo $rootSize | cut -d G -f1)
 
-	if [ $vgSize -gt 10 ]; then # if vgroup's size is greater than 10
+	if ((vgSize > 10)) && ((rootSize <= 0)) ;then # if vgroup's size is greater than 10
 		home='Y' # there would be a home
 		rootSize=$(echo $(bc -l <<< "scale=1; $vgSize * 10 / 100"))"G"
 	fi
@@ -94,7 +96,7 @@ LvmSetup(){
 		lvcreate -L $rootSize $vgroupName -n root # the root named root, what else you need, huh?
 		lvcreate -l 100%FREE $vgroupName -n home # and home is home
 	else # or else use the whole drive only for root
-		lvcreate -l 100%FREE $vgroupName -n root
+		lvcreate -L $rootSize"G" $vgroupName -n root
 	fi
 
 	# activating volume groups
