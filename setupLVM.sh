@@ -84,7 +84,7 @@ LvmSetup(){
 	done
 	vgcreate $vgroupName $partitions
 
-	vgSize=$(echo $(vgs | awk '{print $6}' | awk 'NR==2' | cut -d . -f1)) # virtual group size
+	vgSize=$(echo $(vgs | awk '{print $6}' | awk 'NR==2' | cut -d . -f1 | sed 's/<//')) # virtual group size
 	rootSize=$(echo $rootSize | cut -d G -f1)
 
 	if ((vgSize > 10)) && ((rootSize <= 0)) ;then # if vgroup's size is greater than 10
@@ -93,8 +93,10 @@ LvmSetup(){
 	fi
 
 	if [[ $home =~ 'Y' ]];then # if there's home also
-		lvcreate -L $rootSize $vgroupName -n root # the root named root, what else you need, huh?
+		lvcreate -L $rootSize"G" $vgroupName -n root # the root named root, what else you need, huh?
 		lvcreate -l 100%FREE $vgroupName -n home # and home is home
+	elif ((rootSize <= 0)); then
+		lvcreate -l 100%FREE $vgroupName -n root
 	else # or else use the whole drive only for root
 		lvcreate -L $rootSize"G" $vgroupName -n root
 	fi
