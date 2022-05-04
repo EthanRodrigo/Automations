@@ -18,6 +18,7 @@ if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u: --l help,root-size:,vgroup
 then
 	exit 1
 fi
+
 printHelp(){
 	# help function
 	echo "Usage: setuplvm
