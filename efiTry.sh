@@ -197,6 +197,8 @@ main(){
 		partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
 	done
 
+	partitions+=$efiDev"2"
+
 	LvmSetup
 	laterSetup
 	checkForErrors
