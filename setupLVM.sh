@@ -7,6 +7,7 @@ vgroupName="volgroup0" # the default volume group name
 partitions=""
 filesystem="ext4"
 home=''
+efi='n'
 
 if [ $(echo $tmp | awk '{print $2}') -gt 10 ]; then
 	home='Y'
@@ -14,7 +15,12 @@ else
 	home='N'
 fi
 
-if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home: -- "$@") # storing arguments in an array
+if [ $(ls /sys/firmware | grep efi) == "efi" ]; then
+	efi='y'
+	efiDev=$devices
+fi
+
+if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u:e: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home:,efi-dev -- "$@") # storing arguments in an array
 then
 	exit 1
 fi
@@ -36,6 +42,8 @@ or : setuplvm [OPTIONS]
 		Change the file system. Default file system is ext4
 -u user-home
 		Specify whether you need a home partition or not. Default is 'Y' when there's space more than 10Gigs
+-e efi-dev	UEFI device
+		The drive where you need to have a uefi partition.
 -h help, --help
 		Prints this
 	"
@@ -48,11 +56,25 @@ getArg(){
 		case $1 in
 			-r | --root-size) rootSize="$2"; shift;;
 			-v | --vgroup-name) vgroupName="$2"; shift;;
-			-d | --devices) unset devices; devices+="$2"; shift;;
+			-d | --devices) 
+				unset devices;
+				devices+="$2";
+
+				if [ $efi == 'y' ]; then
+					unset efiDev;
+					efiDev=$(echo ${devices[0]} | cut -c 1-8);
+					devices=$(echo $devices | sed "s/${efiDev//\//\\/}//")
+				fi
+
+				shift;;
 			-f | --filesystem) filesystem="$2"; shift;;
-			-u | --user-home) 
+			-u | --user-home)
 				home="$2";
 				home=$(echo ${home^^});
+				shift;;
+			-e | --efi-dev)
+				efi='y';
+				efiDev="$2";
 				shift;;
 			-h | --help) printHelp; exit;; 
 			-- ) shift; break;;
@@ -74,6 +96,33 @@ t
 8e
 p
 
+w
+EOF
+}
+partitionEFI(){
+# partitioning
+fdisk $1 <<EOF
+d
+n
+
+
+
++500M
+
+t
+ef
+
+n
+
+2
+
+
+
+t
+2
+8e
+
+p
 w
 EOF
 }
@@ -146,6 +195,11 @@ main(){
 	do
 		partition $dev
 	done
+
+	if [ $efi == 'y' ]; then
+		partitionEFI $efiDev
+		partitions+=$efiDev"2"
+	fi
 
 	# creating an array of partitions
 	for dev in $devices
