@@ -7,12 +7,17 @@ vgroupName="volgroup0" # the default volume group name
 partitions=""
 filesystem="ext4"
 home=''
-efiDev=$devices
+efi='n'
 
 if [ $(echo $tmp | awk '{print $2}') -gt 10 ]; then
 	home='Y'
 else
 	home='N'
+fi
+
+if [ $(ls /sys/firmware | grep efi) == "efi" ]; then
+	efi='y'
+	efiDev=$devices
 fi
 
 if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u:e: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home:,efi-dev -- "$@") # storing arguments in an array
@@ -53,10 +58,13 @@ getArg(){
 			-v | --vgroup-name) vgroupName="$2"; shift;;
 			-d | --devices) 
 				unset devices;
-			      	devices+="$2";
+				devices+="$2";
 
-				unset efiDev;
-				efiDev=$(echo ${devices[0]} | cut -c 1-8)
+				if [ $efi =~ 'y' ]; then
+					unset efiDev;
+					efiDev=$(echo ${devices[0]} | cut -c 1-8);
+				fi
+
 				shift;;
 			-f | --filesystem) filesystem="$2"; shift;;
 			-u | --user-home)
@@ -64,6 +72,7 @@ getArg(){
 				home=$(echo ${home^^});
 				shift;;
 			-e | --efi-dev)
+				efi='y';
 				efiDev="$2";
 				shift;;
 			-h | --help) printHelp; exit;; 
@@ -188,7 +197,6 @@ main(){
 		partition $dev
 	done
 
-	partitionEFI $efiDev
 
 	# creating an array of partitions
 	for dev in $devices
@@ -197,7 +205,10 @@ main(){
 		partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
 	done
 
-	partitions+=$efiDev"2"
+	if [ $efi == 'y' ]; then
+		partitionEFI $efiDev
+		partitions+=$efiDev"2"
+	fi
 
 	LvmSetup
 	laterSetup
