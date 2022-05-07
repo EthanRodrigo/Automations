@@ -18,6 +18,7 @@ fi
 if [ $(ls /sys/firmware | grep efi) == "efi" ]; then
 	efi='y'
 	efiDev=$devices
+	devices=$(echo $devices | sed "s/${efiDev//\//\\/}//")
 fi
 
 if ! ARGUMENTS=$(getopt -a -n setuplvm -o hr:v:f:d:u:e: --l help,root-size:,vgroup-name:,filesystem:,devices:,user-home:,efi-dev -- "$@") # storing arguments in an array
@@ -190,17 +191,17 @@ checkForErrors(){
 }
 main(){
 	getArg
+	
+	for dev in $devices
+	do
+		partition $dev
+		device=$(cut -d '/' -f 3 <<< "$dev")
+		partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
+	done
 
 	if [ $efi == 'y' ]; then
 		partitionEFI $efiDev
 		partitions+=$efiDev"2"
-	else
-		for dev in $devices
-		do
-			partition $dev
-			device=$(cut -d '/' -f 3 <<< "$dev")
-			partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
-		done
 	fi
 
 	LvmSetup
