@@ -60,9 +60,10 @@ getArg(){
 				unset devices;
 				devices+="$2";
 
-				if [ $efi =~ 'y' ]; then
+				if [ $efi == 'y' ]; then
 					unset efiDev;
 					efiDev=$(echo ${devices[0]} | cut -c 1-8);
+					devices=$(echo $devices | sed "s/${efiDev//\//\\/}//")
 				fi
 
 				shift;;
@@ -190,13 +191,15 @@ checkForErrors(){
 main(){
 	getArg
 
-	devices=$(echo $devices | sed "s/${efiDev//\//\\/}//")
-
 	for dev in $devices
 	do
 		partition $dev
 	done
 
+	if [ $efi == 'y' ]; then
+		partitionEFI $efiDev
+		partitions+=$efiDev"2"
+	fi
 
 	# creating an array of partitions
 	for dev in $devices
@@ -204,11 +207,6 @@ main(){
 		device=$(cut -d '/' -f 3 <<< "$dev")
 		partitions+="/dev/$(echo $(grep "$device[0-100]" /proc/partitions | awk '{print $4}')) "
 	done
-
-	if [ $efi == 'y' ]; then
-		partitionEFI $efiDev
-		partitions+=$efiDev"2"
-	fi
 
 	LvmSetup
 	laterSetup
